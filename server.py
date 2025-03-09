@@ -40,7 +40,7 @@ class MyServer(BaseHTTPRequestHandler):
         else:
             response = {"users": student_data_store}
             self.send_response(200)
-            
+
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
     def do_PUT(self):
