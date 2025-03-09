@@ -27,7 +27,20 @@ class MyServer(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', '*')
         self.send_header('Access-Control-Allow-Methods', '*')
         self.end_headers()
-        response = {"users": student_data_store}
+
+        student_id = self.path.strip('/')
+
+        if student_id:
+            if student_id in student_data_store:
+                response = {"student": student_data_store[student_id]}
+                self.send_response(200)
+            else:
+                response = {"message": f"Student with ID {student_id} not found."}
+                self.send_response(404)
+        else:
+            response = {"users": student_data_store}
+            self.send_response(200)
+            
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
     def do_PUT(self):
