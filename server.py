@@ -45,7 +45,7 @@ class MyServer(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         student_id = self.path.split('/')[-1]
-        if student_id not in student_data_store:
+        if student_id in student_data_store:
             content_length = int(self.headers['Content-Length'])
             put_data = self.rfile.read(content_length)
             student_info = json.loads(put_data)
