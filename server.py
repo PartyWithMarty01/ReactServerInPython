@@ -43,7 +43,25 @@ class MyServer(BaseHTTPRequestHandler):
 
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
+    # creating a new student
     def do_PUT(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+        student_info = json.loads(post_data)
+        student_id = str(len(student_data_store) + 1)
+        student_data_store[student_id] = student_info
+
+        self.send_response(201)
+        self.send_header("Content-type", "application/json")
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        self.send_header('Access-Control-Allow-Methods', '*')
+        self.end_headers()
+        response = {"message": "Student created", "id": student_id}
+        self.wfile.write(bytes(json.dumps(response), "utf-8"))
+
+    # updating an existing student
+    def do_POST(self):
         student_id = self.path.split('/')[-1]
         if student_id in student_data_store:
             content_length = int(self.headers['Content-Length'])
@@ -60,28 +78,13 @@ class MyServer(BaseHTTPRequestHandler):
                 "student": student_data_store[student_id]
             }
         else:
-            self.send_response(400)
+            self.send_response(404)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            response = {"message": f"Student with ID {student_id} already in the list."}
+            response = {"message": f"Student with ID {student_id} was not found."}
 
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
-    def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        student_info = json.loads(post_data)
-        student_id = str(len(student_data_store) + 1)
-        student_data_store[student_id] = student_info
-
-        self.send_response(201)
-        self.send_header("Content-type", "application/json")
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Headers', '*')
-        self.send_header('Access-Control-Allow-Methods', '*')
-        self.end_headers()
-        response = {"message": "Student created", "id": student_id}
-        self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
     def do_DELETE(self):
         student_id = self.path.split('/')[-1]
