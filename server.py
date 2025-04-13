@@ -72,6 +72,9 @@ class MyServer(BaseHTTPRequestHandler):
 
             self.send_response(200)
             self.send_header("Content-type", "application/json")
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Headers', '*')
+            self.send_header('Access-Control-Allow-Methods', '*')
             self.end_headers()
             response = {
                 "message": f"Student with ID {student_id} updated.",
