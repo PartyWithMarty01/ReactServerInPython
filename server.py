@@ -65,8 +65,18 @@ class MyServer(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         student_info = json.loads(post_data)
-        student_id = str(len(student_data_store) + 1)
-        student_data_store[student_id] = student_info
+        name = student_info.get("name")
+        age = student_info.get("age")
+
+        with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO public.pwm_users (name, age)
+                    VALUES (%s, %s)
+                    RETURNING id;
+                """, (name, age))
+                student_id = cur.fetchone()[0]
+                conn.commit()
 
         self.send_response(201)
         self.send_header("Content-type", "application/json")
@@ -80,29 +90,40 @@ class MyServer(BaseHTTPRequestHandler):
     # updating an existing student
     def do_POST(self):
         student_id = self.path.split('/')[-1]
-        if student_id in student_data_store:
-            content_length = int(self.headers['Content-Length'])
-            put_data = self.rfile.read(content_length)
-            student_info = json.loads(put_data)
 
-            student_data_store[student_id] = student_info
+        content_length = int(self.headers['Content-Length'])
+        put_data = self.rfile.read(content_length)
+        student_info = json.loads(put_data)
+        name = student_info.get("name")
+        age = student_info.get("age")
 
+        with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE public.pwm_users
+                    SET name = %s, age = %s
+                    WHERE id = %s
+                    RETURNING id;
+                """, (name, age, student_id))
+                result = cur.fetchone()
+                conn.commit()
+
+        self.send_header("Content-type", "application/json")
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        self.send_header('Access-Control-Allow-Methods', '*')
+
+        if result:
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Access-Control-Allow-Headers', '*')
-            self.send_header('Access-Control-Allow-Methods', '*')
-            self.end_headers()
             response = {
                 "message": f"Student with ID {student_id} updated.",
-                "student": student_data_store[student_id]
+                "student": {"name": name, "age": age}
             }
         else:
             self.send_response(404)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
             response = {"message": f"Student with ID {student_id} was not found."}
 
+        self.end_headers()
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
 
