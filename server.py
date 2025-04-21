@@ -1,14 +1,13 @@
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
-
+import psycopg
 import requests
 
 hostName = "localhost"
 serverPort = 4000
 
 student_data_store = {"1": {"name": "Aragorn", "age": 87}, "2": {"name": "Gandalf", "age": 3000}}
-
 
 class MyServer(BaseHTTPRequestHandler):
 
@@ -30,15 +29,33 @@ class MyServer(BaseHTTPRequestHandler):
 
         student_id = self.path.strip('/')
 
+        # Connect to an existing database
+        with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+
+            # Open a cursor to perform database operations
+            with conn.cursor() as cur:
+                # Execute a command: this creates a new table
+                cur.execute("""
+                    SELECT id, name, age FROM public.pwm_users
+                    ORDER BY id ASC 
+                    """)
+                students = {}
+                for record in cur:
+                    print(record)
+                    student = {"name": record[1], "age": record[2]}
+                    id = record[0]
+                    students[id] = student
+                print(students)
+
         if student_id:
-            if student_id in student_data_store:
-                response = {"student": student_data_store[student_id]}
+            if student_id in students:
+                response = {"student": students[student_id]}
                 self.send_response(200)
             else:
                 response = {"message": f"Student with ID {student_id} not found."}
                 self.send_response(404)
         else:
-            response = {"users": student_data_store}
+            response = {"users": students}
             self.send_response(200)
 
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
@@ -92,19 +109,21 @@ class MyServer(BaseHTTPRequestHandler):
     def do_DELETE(self):
         student_id = self.path.split('/')[-1]
 
-        if student_id in student_data_store:  # Checks if student exists
-            del student_data_store[student_id]  # Deletes student from memory
-            self.send_response(200)  # Sends success response
-            self.send_header("Content-type", "application/json")
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            response = {"message": f"Student with ID {student_id} deleted."}
-        else:
-            self.send_response(404)  # Sends error if student not found
-            self.send_header("Content-type", "application/json")
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            response = {"message": f"Student with ID {student_id} not found."}
+        with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+            # Open a cursor to perform database operations
+            with conn.cursor() as cur:
+                # Execute a command: this creates a new table
+                cur.execute("""
+                    DELETE FROM public.pwm_users
+                    WHERE id=%s
+                    """, (student_id,))
+                conn.commit()
+        self.send_response(200)  # Sends success response
+        self.send_header("Content-type", "application/json")
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        response = {"message": f"Student with ID {student_id} deleted."}
+
 
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
