@@ -108,11 +108,6 @@ class MyServer(BaseHTTPRequestHandler):
                 result = cur.fetchone()
                 conn.commit()
 
-        self.send_header("Content-type", "application/json")
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Headers', '*')
-        self.send_header('Access-Control-Allow-Methods', '*')
-
         if result:
             self.send_response(200)
             response = {
@@ -122,6 +117,11 @@ class MyServer(BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             response = {"message": f"Student with ID {student_id} was not found."}
+
+        self.send_header("Content-type", "application/json")
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        self.send_header('Access-Control-Allow-Methods', '*')
 
         self.end_headers()
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
