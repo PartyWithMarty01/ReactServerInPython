@@ -3,6 +3,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 import psycopg
 import requests
+import urllib.parse
 
 hostName = "localhost"
 serverPort = 4000
@@ -60,34 +61,88 @@ class MyServer(BaseHTTPRequestHandler):
 
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
-    # creating a new student
+    def _parse_path(self):
+        """Parse URL path to extract resource and ID"""
+        parsed_url = urllib.parse.urlparse(self.path)
+        path_parts = parsed_url.path.strip('/').split('/')
+
+        if not path_parts or path_parts[0] == '':
+            return None, None
+        resource = path_parts[0]
+        resource_id = path_parts[1] if len(path_parts) > 1 else None
+
+        return resource, resource_id
+
+
     def do_PUT(self):
+        resource, resource_id = self._parse_path()
+
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
-        student_info = json.loads(post_data)
-        name = student_info.get("name")
-        age = student_info.get("age")
+        data = json.loads(post_data)
 
-        with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO public.pwm_users (name, age)
-                    VALUES (%s, %s)
-                    RETURNING id;
-                """, (name, age))
-                student_id = cur.fetchone()[0]
-                conn.commit()
+        if resource == 'users':
+            # Create a new user
+            name = data.get("name")
+            age = data.get("age")
 
-        self.send_response(201)
+            with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                            INSERT INTO public.pwm_users (name, age)
+                            VALUES (%s, %s)
+                            RETURNING id;
+                        """, (name, age))
+                    student_id = cur.fetchone()[0]
+                    conn.commit()
+
+            self.send_response(201)
+            response = {
+                "message": "Student created",
+                "id": student_id
+            }
+
+        elif resource == 'lessons':
+            # Create a new lesson for a student
+            student_id = data.get("student_id")
+
+            if not student_id:
+                self.send_response(400)
+                response = {"message": "student_id is required"}
+            else:
+                with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                                INSERT INTO public.lessons (student_id)
+                                VALUES (%s)
+                                RETURNING id, created_at;
+                            """, (student_id,))
+                        lesson = cur.fetchone()
+                        conn.commit()
+
+                self.send_response(201)
+                response = {
+                    "message": "Lesson created",
+                    "lesson": {
+                        "id": lesson[0],
+                        "student_id": student_id,
+                        "created_at": str(lesson[1])
+                    }
+                }
+
+        else:
+            self.send_response(404)
+            response = {"message": f"Unknown resource '{resource}'"}
+
+        # send headers and response
         self.send_header("Content-type", "application/json")
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Headers', '*')
         self.send_header('Access-Control-Allow-Methods', '*')
         self.end_headers()
-        response = {"message": "Student created", "id": student_id}
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
+        # updating an existing student
 
-    # updating an existing student
     def do_POST(self):
         student_id = self.path.split('/')[-1]
 
@@ -108,23 +163,23 @@ class MyServer(BaseHTTPRequestHandler):
                 result = cur.fetchone()
                 conn.commit()
 
-        if result:
-            self.send_response(200)
-            response = {
-                "message": f"Student with ID {student_id} updated.",
-                "student": {"name": name, "age": age}
-            }
-        else:
-            self.send_response(404)
-            response = {"message": f"Student with ID {student_id} was not found."}
+            if result:
+                self.send_response(200)
+                response = {
+                    "message": f"Student with ID {student_id} updated.",
+                    "student": {"name": name, "age": age}
+                }
+            else:
+                self.send_response(404)
+                response = {"message": f"Student with ID {student_id} was not found."}
 
-        self.send_header("Content-type", "application/json")
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Headers', '*')
-        self.send_header('Access-Control-Allow-Methods', '*')
+            self.send_header("Content-type", "application/json")
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Headers', '*')
+            self.send_header('Access-Control-Allow-Methods', '*')
 
-        self.end_headers()
-        self.wfile.write(bytes(json.dumps(response), "utf-8"))
+            self.end_headers()
+            self.wfile.write(bytes(json.dumps(response), "utf-8"))
 
 
     def do_DELETE(self):
@@ -160,5 +215,3 @@ if __name__ == "__main__":
 
     webServer.server_close()
     print("Server stopped.")
-
-
