@@ -141,9 +141,10 @@ class MyServer(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', '*')
         self.end_headers()
         self.wfile.write(bytes(json.dumps(response), "utf-8"))
-        # updating an existing student
+
 
     def do_POST(self):
+        # updating an existing student
         student_id = self.path.split('/')[-1]
 
         content_length = int(self.headers['Content-Length'])
