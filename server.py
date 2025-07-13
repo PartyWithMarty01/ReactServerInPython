@@ -76,6 +76,7 @@ class MyServer(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         resource, resource_id = self._parse_path()
+        print(f"do_PUT called: resource={resource}")
 
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
