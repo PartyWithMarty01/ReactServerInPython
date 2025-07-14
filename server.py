@@ -43,10 +43,25 @@ class MyServer(BaseHTTPRequestHandler):
                 students = {}
                 for record in cur:
                     print(record)
-                    student = {"name": record[1], "age": record[2]}
+                    student = {"name": record[1], "age": record[2], "lessons": []}
                     id = record[0]
                     students[id] = student
                 print(students)
+
+                cur.execute("""
+                                    SELECT id, student_id, created_at
+                                    FROM public.lessons
+                                """)
+                for record in cur:
+                    lesson_id, student_id_fk, created_at = record
+                    if student_id_fk in students:
+                        students[student_id_fk]["lessons"].append({
+                            "lesson_id": lesson_id,
+                            "created_at": str(created_at)
+                        })
+
+            print("Students with their lessons:")
+            print(json.dumps(students, indent=2))
 
         if student_id:
             if student_id in students:
