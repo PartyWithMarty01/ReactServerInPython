@@ -16,11 +16,23 @@ student_data_store = {"1": {"name": "Aragorn", "age": 87}, "2": {"name": "Gandal
 
 class MyServer(BaseHTTPRequestHandler):
 
+    def _parse_path(self):
+        """Parse URL path to extract resource and ID"""
+        parsed_url = urllib.parse.urlparse(self.path)
+        path_parts = parsed_url.path.strip('/').split('/')
+
+        if not path_parts or path_parts[0] == '':
+            return None, None
+        resource = path_parts[0]
+        resource_id = path_parts[1] if len(path_parts) > 1 else None
+
+        return resource, resource_id
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Headers', '*')
-        self.send_header('Access-Control-Allow-Methods', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT, DELETE')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
 
     def do_GET(self):

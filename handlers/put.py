@@ -32,6 +32,7 @@ def handle_put(handler):
     elif resource == 'lessons':
         # Create a new lesson for a student
         student_id = data.get("student_id")
+        topic = data.get("topic")
 
         if not student_id:
             handler.send_response(400)
@@ -40,10 +41,10 @@ def handle_put(handler):
             with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                            INSERT INTO public.lessons (student_id)
-                            VALUES (%s)
+                            INSERT INTO public.lessons (student_id, topic)
+                            VALUES (%s, %s)
                             RETURNING id, created_at;
-                        """, (student_id,))
+                        """, (student_id, topic))
                     lesson = cur.fetchone()
                     conn.commit()
 

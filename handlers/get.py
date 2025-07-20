@@ -54,16 +54,3 @@ def handle_get(handler):
         handler.send_response(200)
 
     handler.wfile.write(bytes(json.dumps(response), "utf-8"))
-
-
-def _parse_path(self):
-    """Parse URL path to extract resource and ID"""
-    parsed_url = urllib.parse.urlparse(self.path)
-    path_parts = parsed_url.path.strip('/').split('/')
-
-    if not path_parts or path_parts[0] == '':
-        return None, None
-    resource = path_parts[0]
-    resource_id = path_parts[1] if len(path_parts) > 1 else None
-
-    return resource, resource_id
