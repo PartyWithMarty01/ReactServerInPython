@@ -10,7 +10,7 @@ def handle_post(handler):
     name = student_info.get("name")
     age = student_info.get("age")
 
-    with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+    with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 UPDATE public.pwm_users

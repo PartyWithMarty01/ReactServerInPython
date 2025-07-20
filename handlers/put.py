@@ -13,7 +13,7 @@ def handle_put(handler):
         name = data.get("name")
         age = data.get("age")
 
-        with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+        with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
             with conn.cursor() as cur:
                 cur.execute("""
                         INSERT INTO public.pwm_users (name, age)
@@ -38,7 +38,7 @@ def handle_put(handler):
             handler.send_response(400)
             response = {"message": "student_id is required"}
         else:
-            with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+            with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
                             INSERT INTO public.lessons (student_id, topic)
