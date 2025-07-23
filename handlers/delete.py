@@ -3,7 +3,7 @@ import psycopg
 def handle_delete(handler):
     student_id = handler.path.split('/')[-1]
 
-    with psycopg.connect("dbname=postgres user=API password=me1234") as conn:
+    with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
         # Open a cursor to perform database operations
         with conn.cursor() as cur:
             # Execute a command: this creates a new table
