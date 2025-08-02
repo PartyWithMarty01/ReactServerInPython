@@ -8,6 +8,20 @@ def handle_put(handler):
     post_data = handler.rfile.read(content_length)
     data = json.loads(post_data)
 
+    if path.startswith("teachers/"):
+        teacher_id = path.split("/")[-1]
+
+        with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM public.teachers WHERE id = %s", (teacher_id,))
+                conn.commit()
+
+        handler.send_response(200)
+        handler.send_header("Content-type", "application/json")
+        handler.send_header('Access-Control-Allow-Origin', '*')
+        handler.end_headers()
+        handler.wfile.write(bytes(json.dumps({"message": f"Teacher with ID {teacher_id} deleted."}), "utf-8"))
+
     if resource == 'users':
         # Create a new user
         name = data.get("name")

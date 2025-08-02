@@ -11,6 +11,19 @@ def handle_get(handler):
 
     student_id = handler.path.strip('/')
 
+    if path == "teachers":
+        with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, name FROM public.teachers ORDER BY id ASC")
+                teachers = [{"id": r[0], "name": r[1]} for r in cur]
+
+        handler.send_response(200)
+        handler.send_header("Content-type", "application/json")
+        handler.send_header('Access-Control-Allow-Origin', '*')
+        handler.end_headers()
+        handler.wfile.write(bytes(json.dumps(teachers), "utf-8"))
+        return
+
     # Connect to an existing database
     with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
 
