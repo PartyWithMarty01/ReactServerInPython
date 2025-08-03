@@ -9,6 +9,37 @@ def handle_put(handler):
     data = json.loads(post_data)
     path = handler.path.strip('/')
 
+    if resource == "teachers" and "/" not in path:
+        name = data.get("name")
+        topic_ids = data.get("topic_ids", [])
+
+        with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
+            with conn.cursor() as cur:
+                # Insert teacher
+                cur.execute("""
+                    INSERT INTO public.teachers (name)
+                    VALUES (%s)
+                    RETURNING id;
+                """, (name,))
+                teacher_id = cur.fetchone()[0]
+
+                # Link topics (assumes teacher_topics table exists)
+                for topic_id in topic_ids:
+                    cur.execute("""
+                        INSERT INTO public.teacher_topics (teacher_id, topic_id)
+                        VALUES (%s, %s);
+                    """, (teacher_id, topic_id))
+
+                conn.commit()
+
+        handler.send_response(201)
+        response = {
+            "message": "Teacher created",
+            "id": teacher_id,
+            "name": name,
+            "topic_ids": topic_ids
+        }
+
     if path.startswith("teachers/"):
         teacher_id = path.split("/")[-1]
 
@@ -50,6 +81,9 @@ def handle_put(handler):
         topic = data.get("topic")
         teacher_id = data.get("teacher_id")
 
+        if teacher_id == "":
+            teacher_id = None
+
         if not student_id:
             handler.send_response(400)
             response = {"message": "student_id is required"}
@@ -57,8 +91,8 @@ def handle_put(handler):
             with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                            INSERT INTO public.lessons (student_id, topic)
-                            VALUES (%s, %s)
+                            INSERT INTO public.lessons (student_id, topic, teacher_id)
+                            VALUES (%s, %s, %s)
                             RETURNING id, created_at;
                         """, (student_id, topic, teacher_id))
                     lesson = cur.fetchone()
