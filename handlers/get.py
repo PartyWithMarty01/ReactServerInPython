@@ -10,6 +10,7 @@ def handle_get(handler):
     handler.end_headers()
 
     student_id = handler.path.strip('/')
+    path = handler.path.strip('/')
 
     if path == "teachers":
         with psycopg.connect("host=localhost port=5432 dbname=postgres user=API password=me1234") as conn:
@@ -67,3 +68,4 @@ def handle_get(handler):
         handler.send_response(200)
 
     handler.wfile.write(bytes(json.dumps(response), "utf-8"))
+    handler.wfile.write(bytes(json.dumps(teachers), "utf-8"))

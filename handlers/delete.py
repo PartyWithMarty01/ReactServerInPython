@@ -2,6 +2,7 @@ import json
 import psycopg
 def handle_delete(handler):
     student_id = handler.path.split('/')[-1]
+    path = handler.path.split('/')[-1]
 
     if path.startswith("teachers/"):
         teacher_id = path.split("/")[-1]
@@ -34,3 +35,4 @@ def handle_delete(handler):
     response = {"message": f"Student with ID {student_id} deleted."}
 
     handler.wfile.write(bytes(json.dumps(response), "utf-8"))
+    handler.wfile.write(bytes(json.dumps(path), "utf-8"))
