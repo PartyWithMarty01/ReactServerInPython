@@ -7,6 +7,7 @@ def handle_put(handler):
     content_length = int(handler.headers['Content-Length'])
     post_data = handler.rfile.read(content_length)
     data = json.loads(post_data)
+    path = handler.path.strip('/')
 
     if path.startswith("teachers/"):
         teacher_id = path.split("/")[-1]
@@ -47,6 +48,7 @@ def handle_put(handler):
         # Create a new lesson for a student
         student_id = data.get("student_id")
         topic = data.get("topic")
+        teacher_id = data.get("teacher_id")
 
         if not student_id:
             handler.send_response(400)
@@ -58,7 +60,7 @@ def handle_put(handler):
                             INSERT INTO public.lessons (student_id, topic)
                             VALUES (%s, %s)
                             RETURNING id, created_at;
-                        """, (student_id, topic))
+                        """, (student_id, topic, teacher_id))
                     lesson = cur.fetchone()
                     conn.commit()
 
