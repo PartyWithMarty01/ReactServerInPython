@@ -51,8 +51,10 @@ def handle_put(handler):
         handler.send_response(200)
         handler.send_header("Content-type", "application/json")
         handler.send_header('Access-Control-Allow-Origin', '*')
+        handler.send_header('Access-Control-Allow-Headers', '*')
+        handler.send_header('Access-Control-Allow-Methods', '*')
         handler.end_headers()
-        handler.wfile.write(bytes(json.dumps({"message": f"Teacher with ID {teacher_id} deleted."}), "utf-8"))
+        handler.wfile.write(bytes(json.dumps(response), "utf-8"))
 
     if resource == 'users':
         # Create a new user

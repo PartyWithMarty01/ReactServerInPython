@@ -19,10 +19,6 @@ def handle_get(handler):
                 cur.execute("SELECT id, name FROM public.teachers ORDER BY id ASC")
                 teachers = [{"id": r[0], "name": r[1]} for r in cur]
 
-        handler.send_response(200)
-        handler.send_header("Content-type", "application/json")
-        handler.send_header('Access-Control-Allow-Origin', '*')
-        handler.end_headers()
         handler.wfile.write(bytes(json.dumps(teachers), "utf-8"))
         return
 
